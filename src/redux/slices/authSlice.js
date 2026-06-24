@@ -34,21 +34,36 @@ export const loginUser = createAsyncThunk("auth/loginUser", async (userData, {re
     }
 })
 
-export const regUser = createAsyncThunk("auth/regUser", async (userData, {rejectWithValue}) => {
+// frontend/src/redux/slices/authSlice.js
+export const regUser = createAsyncThunk(
+  "auth/regUser",
+  async (userData, { rejectWithValue }) => {
     try {
-        const response = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/users/register`, userData
-        )
-        setToken(response.data.token);
+      console.log("📤 Register attempt:", userData.email);
+      
+      const response = await apiClient.post('/api/users/register', userData);
+      
+      console.log("✅ Register success:", response.data);
+      
+      if (response.data.success && response.data.token) {
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
-
-        return response.data.user; // returns the user object from the response
-
+        localStorage.setItem("userToken", response.data.token);
+        return response.data.user;
+      } else {
+        throw new Error(response.data.message || "Registration failed");
+      }
     } catch (error) {
-        console.error("❌ Registration error:", error);
-        return rejectWithValue(error.response?.data || { message: "Network error. Please try again." });
+      console.error("❌ Register error:", error.response?.data || error.message);
+      
+      const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+      
+      return rejectWithValue({ 
+        message: errorMessage,
+        status: error.response?.status 
+      });
     }
-})
+  }
+);
 
 const authSlice = createSlice({
     name: "auth",

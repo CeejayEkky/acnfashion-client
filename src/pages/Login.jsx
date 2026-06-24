@@ -55,7 +55,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      toast.success(`Welcome back, ${user.name}!`, {
+      toast.success(`Welcome back, ${user.name || 'User'}!`, {
         duration: 2000,
       });
       if (cart?.products.length > 0 && guestId) {

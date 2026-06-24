@@ -36,7 +36,7 @@ const Register = () => {
   const hSubmit = (e) => {
     e.preventDefault();
     dispatch(regUser({ name, email, password }));
-    toast.success(`Welcome ${user?.name}`, {
+    toast.success(`Welcome ${user?.name || 'User'}`, {
       duration: 1500
     });
   };
