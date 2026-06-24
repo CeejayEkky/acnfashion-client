@@ -1,47 +1,67 @@
+// frontend/src/redux/slices/authSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { getToken, setToken, clearAuthData } from "../../utils/tokenUtils";
+import { toast } from "sonner";
 
 const userFromStorage = localStorage.getItem("userInfo")
   ? JSON.parse(localStorage.getItem("userInfo"))
   : null;
 
 const initGuestId = localStorage.getItem("guestId") || `guest_${new Date().getTime()}`;
-localStorage.setItem("guestId", initGuestId)
+localStorage.setItem("guestId", initGuestId);
 
 const initialState = {
-    user: userFromStorage,
-    guestId: initGuestId,
-    loading: false,
-    error: null,
-}
+  user: userFromStorage,
+  guestId: initGuestId,
+  loading: false,
+  error: null,
+};
 
-export const loginUser = createAsyncThunk("auth/loginUser", async (userData, {rejectWithValue}) => {
+// ✅ LOGIN - Use axios directly
+export const loginUser = createAsyncThunk(
+  "auth/loginUser",
+  async (userData, { rejectWithValue }) => {
     try {
-        const response = await axios.post(
-            `${import.meta.env.VITE_BACKEND_URL}/api/users/login`, userData
-        )
-
-        setToken(response.data.token);
+      console.log("📤 Login attempt:", userData.email);
+      
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/login`,
+        userData
+      );
+      
+      console.log("✅ Login success:", response.data);
+      
+      if (response.data.success && response.data.token) {
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
-        
-
-        return response.data.user; // returns the user object from the response
-
+        localStorage.setItem("userToken", response.data.token);
+        return response.data.user;
+      } else {
+        throw new Error(response.data.message || "Login failed");
+      }
     } catch (error) {
-        console.error("❌ Login error:", error);
-        return rejectWithValue(error.response?.data || { message: "Login failed!. Please try again." });
+      console.error("❌ Login error:", error.response?.data || error.message);
+      
+      const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
+      
+      return rejectWithValue({ 
+        message: errorMessage,
+        status: error.response?.status 
+      });
     }
-})
+  }
+);
 
-// frontend/src/redux/slices/authSlice.js
+// ✅ REGISTER - Use axios directly
 export const regUser = createAsyncThunk(
   "auth/regUser",
   async (userData, { rejectWithValue }) => {
     try {
       console.log("📤 Register attempt:", userData.email);
       
-      const response = await apiClient.post('/api/users/register', userData);
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/users/register`,
+        userData
+      );
       
       console.log("✅ Register success:", response.data);
       
@@ -66,48 +86,58 @@ export const regUser = createAsyncThunk(
 );
 
 const authSlice = createSlice({
-    name: "auth",
-    initialState,
-    reducers: {
-        logout: (state) => {
-            state.user = null;
-            state.guestId = `guest_${new Date().getTime()}` // reset guestID on logout
-            state.error = null;
-            clearAuthData();
-            localStorage.setItem("guestId", state.guestId);
-        },
-        generateNewGuestId: (state) => {
-            state.guestId = `guest_${new Date().getTime()}` // reset guestID on logout
-            localStorage.setItem("guestId", state.guestId);
-        },
-        clearError: (state) => { // ✅ Add this
+  name: "auth",
+  initialState,
+  reducers: {
+    logout: (state) => {
+      state.user = null;
+      state.guestId = `guest_${new Date().getTime()}`;
+      state.error = null;
+      localStorage.removeItem("userInfo");
+      localStorage.removeItem("userToken");
+      localStorage.setItem("guestId", state.guestId);
+      toast.success("Logged out successfully");
+    },
+    generateNewGuestId: (state) => {
+      state.guestId = `guest_${new Date().getTime()}`;
+      localStorage.setItem("guestId", state.guestId);
+    },
+    clearError: (state) => {
       state.error = null;
     },
-    },
-    extraReducers: (builder) => {
-        builder.addCase(loginUser.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-        }).addCase(loginUser.fulfilled, (state, action) => {
-            state.loading = false;
-            state.user = action.payload;
-            state.error = null;
-        }).addCase(loginUser.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.payload.message;
-        }).addCase(regUser.pending, (state) => {
-            state.loading = true;
-            state.error = null;
-        }).addCase(regUser.fulfilled, (state, action) => {
-            state.loading = false;
-            state.user = action.payload;
-            state.error = null
-        }).addCase(regUser.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.payload.message;
-        })
-    }
-})
+  },
+  extraReducers: (builder) => {
+    builder
+      // Login
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || { message: "Login failed" };
+      })
+      // Register
+      .addCase(regUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(regUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(regUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || { message: "Registration failed" };
+      });
+  },
+});
 
-export const {logout, generateNewGuestId, clearError} = authSlice.actions;
+export const { logout, generateNewGuestId, clearError } = authSlice.actions;
 export default authSlice.reducer;
