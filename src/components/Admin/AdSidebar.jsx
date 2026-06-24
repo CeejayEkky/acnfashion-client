@@ -1,0 +1,177 @@
+// frontend/src/components/Admin/AdSidebar.js
+import React, { useEffect, useState } from "react";
+import {
+  FaBoxOpen,
+  FaClipboardList,
+  FaSignOutAlt,
+  FaStore,
+  FaUser,
+  FaStar,
+  FaEnvelope,
+} from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { logout } from "../../redux/slices/authSlice";
+import { clearCart } from "../../redux/slices/cartSlice";
+import axios from "axios";
+
+const AdSidebar = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [pendingCount, setPendingCount] = useState(0);
+  
+  // ✅ Get unreadCount from Redux
+  const { unreadCount } = useSelector((state) => state.messages);
+
+  // ✅ Fetch pending reviews count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const token = localStorage.getItem("userToken");
+        const cleanToken = token?.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
+        
+        const response = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/reviews/admin`,
+          {
+            headers: {
+              Authorization: `Bearer ${cleanToken}`,
+            },
+          }
+        );
+        
+        const pending = response.data.reviews.filter(r => !r.isApproved).length;
+        setPendingCount(pending);
+      } catch (error) {
+        console.error("Failed to fetch pending count:", error);
+      }
+    };
+
+    fetchPendingCount();
+    
+    // Refresh pending count every 30 seconds
+    const interval = setInterval(fetchPendingCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handLogout = () => {
+    dispatch(logout());
+    dispatch(clearCart());
+    navigate("/");
+  };
+
+  return (
+    <div className="p-6">
+      <Link
+        style={{ fontFamily: "Candara" }}
+        to="/admin"
+        className="text-2xl font-bold"
+      >
+        <div className="mb-6 border rounded-3xl p-4 bg-gray-950 cursor-pointer hover:bg-gray-800">
+          A.C.N <br /> Fashion House
+        </div>
+      </Link>
+
+      <h2 className="text-xl font-medium mb-6 border border-r-0 rounded-bl-2xl rounded-tl-2xl p-2">
+        Admin Dashboard
+      </h2>
+
+      <nav className="flex flex-col space-y-2">
+        <NavLink
+          to="/admin/users"
+          className={({ isActive }) =>
+            isActive
+              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
+          }
+        >
+          <FaUser />
+          <span>Users</span>
+        </NavLink>
+
+        <NavLink
+          to="/admin/products"
+          className={({ isActive }) =>
+            isActive
+              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
+          }
+        >
+          <FaBoxOpen />
+          <span>Products</span>
+        </NavLink>
+
+        <NavLink
+          to="/admin/orders"
+          className={({ isActive }) =>
+            isActive
+              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
+          }
+        >
+          <FaClipboardList />
+          <span>Orders</span>
+        </NavLink>
+
+        {/* ✅ Reviews Link */}
+        <NavLink
+          to="/admin/reviews"
+          className={({ isActive }) =>
+            isActive
+              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
+          }
+        >
+          <FaStar />
+          <span>Reviews</span>
+          {pendingCount > 0 && (
+            <span className="ml-auto bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full font-bold">
+              {pendingCount}
+            </span>
+          )}
+        </NavLink>
+
+        {/* ✅ Messages Link */}
+        <NavLink
+          to="/admin/messages"
+          className={({ isActive }) =>
+            isActive
+              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
+          }
+        >
+          <FaEnvelope />
+          <span>Messages</span>
+          {unreadCount > 0 && (
+            <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </NavLink>
+
+        <NavLink
+          to="/discover/all"
+          className={({ isActive }) =>
+            isActive
+              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
+          }
+        >
+          <FaStore />
+          <span>Store</span>
+        </NavLink>
+      </nav>
+
+      <div className="mt-6">
+        <button
+          onClick={handLogout}
+          className="cursor-pointer w-full bg-red-500 font-bold hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center space-x-2"
+        >
+          <FaSignOutAlt />
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default AdSidebar;
