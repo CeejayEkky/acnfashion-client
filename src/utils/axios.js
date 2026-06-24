@@ -1,112 +1,47 @@
+// frontend/src/utils/axios.js
 import axios from "axios";
 
-// ✅ Get clean token helper
-const getCleanToken = () => {
-  const token = localStorage.getItem("userToken");
-  if (!token) return null;
-  
-  // Remove whitespace and quotes
-  let cleanToken = token.trim();
-  if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
-    cleanToken = cleanToken.slice(1, -1);
-  }
-  return cleanToken.replace(/\s/g, '');
-};
+// ✅ Use the correct backend URL
+const API_URL = import.meta.env.VITE_BACKEND_URL || "https://acnfashion-server-1.onrender.com";
 
-// ✅ Create axios instance
-const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000',
-  timeout: 30000, // 30 seconds timeout
+const api = axios.create({
+  baseURL: API_URL,
+  timeout: 60000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// ✅ Request Interceptor - Adds token to every request
-apiClient.interceptors.request.use(
+// ✅ Request interceptor
+api.interceptors.request.use(
   (config) => {
-    const token = getCleanToken();
-    
+    const token = localStorage.getItem("userToken");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      const cleanToken = token.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
+      config.headers.Authorization = `Bearer ${cleanToken}`;
     }
-    
-    // Log request in development
-    if (import.meta.env.DEV) {
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    }
-    
+    console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
+  (error) => Promise.reject(error)
+);
+
+// ✅ Response interceptor
+api.interceptors.response.use(
+  (response) => {
+    console.log(`📥 ${response.status} ${response.config.url}`);
+    return response;
+  },
   (error) => {
-    console.error('❌ Request Interceptor Error:', error);
+    console.error("❌ API Error:", error.response?.status, error.message);
+    
+    if (error.response?.status === 401) {
+      localStorage.removeItem("userToken");
+      localStorage.removeItem("userInfo");
+      window.location.href = "/login";
+    }
     return Promise.reject(error);
   }
 );
 
-// ✅ Response Interceptor - Handles errors globally
-apiClient.interceptors.response.use(
-  (response) => {
-    // Log response in development
-    if (import.meta.env.DEV) {
-      console.log(`✅ API Response: ${response.config.url}`, response.status);
-    }
-    return response;
-  },
-  async (error) => {
-    // ✅ Handle network errors
-    if (!error.response) {
-      console.error('❌ Network Error - No response from server');
-      return Promise.reject({
-        message: 'Network error. Please check your connection.',
-        status: 0,
-      });
-    }
-
-    const { status, data } = error.response;
-    const errorMessage = data?.message || 'An error occurred';
-
-    console.error(`❌ API Error ${status}:`, errorMessage);
-
-    // ✅ Handle specific status codes
-    switch (status) {
-      case 401:
-        // Token expired or invalid - logout user
-        console.warn('⚠️ Authentication failed. Redirecting to login...');
-        localStorage.removeItem("userToken");
-        localStorage.removeItem("userInfo");
-        
-        // Only redirect if not already on login page
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-        break;
-        
-      case 403:
-        console.error('⛔ Forbidden - Insufficient permissions');
-        // Could show a permission error toast
-        break;
-        
-      case 404:
-        console.warn('🔍 Resource not found:', error.config.url);
-        break;
-        
-      case 500:
-        console.error('💥 Server Error:', errorMessage);
-        break;
-        
-      default:
-        break;
-    }
-
-    // ✅ Return a clean error object
-    return Promise.reject({
-      message: errorMessage,
-      status: status,
-      data: data,
-      originalError: error,
-    });
-  }
-);
-
-export default apiClient;
+export default api;
