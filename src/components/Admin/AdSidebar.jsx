@@ -60,9 +60,9 @@ const AdSidebar = () => {
   };
 
   return (
-    // ✅ FIXED: Sticky sidebar that stays in place
-    <div className="w-64 bg-gray-900 text-white h-screen sticky top-0 overflow-y-auto flex-shrink-0">
-      <div className="p-6">
+    // ✅ FIXED: Sidebar takes full height, doesn't scroll
+    <div className="w-64 bg-gray-900 text-white h-full flex flex-col overflow-y-auto">
+      <div className="p-6 flex-1">
         <Link
           style={{ fontFamily: "Candara" }}
           to="/admin"
@@ -160,16 +160,17 @@ const AdSidebar = () => {
             <span>Store</span>
           </NavLink>
         </nav>
+      </div>
 
-        <div className="mt-6">
-          <button
-            onClick={handLogout}
-            className="cursor-pointer w-full bg-red-500 font-bold hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center space-x-2 transition"
-          >
-            <FaSignOutAlt />
-            <span>Logout</span>
-          </button>
-        </div>
+      {/* ✅ LOGOUT BUTTON - Stays at bottom */}
+      <div className="p-6 border-t border-gray-700">
+        <button
+          onClick={handLogout}
+          className="cursor-pointer w-full bg-red-500 font-bold hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center space-x-2 transition"
+        >
+          <FaSignOutAlt />
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   );

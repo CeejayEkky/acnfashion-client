@@ -12,16 +12,17 @@ const AdLayout = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* ✅ SIDEBAR - Fixed on desktop, sliding on mobile */}
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      {/* ✅ SIDEBAR - ALWAYS FIXED */}
       <div
         className={`
-          fixed lg:relative 
-          z-30 
+          fixed lg:relative
+          z-30
+          h-full
           transition-transform duration-300 ease-in-out
           ${isSideOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
-          h-screen
+          flex-shrink-0
         `}
       >
         <AdSidebar />
@@ -35,8 +36,8 @@ const AdLayout = () => {
         />
       )}
 
-      {/* ✅ MAIN CONTENT */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      {/* ✅ MAIN CONTENT - SCROLLABLE */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden lg:ml-64">
         {/* ✅ MOBILE HEADER */}
         <div className="lg:hidden sticky top-0 z-10 bg-gray-900 text-white p-4 flex items-center">
           <button onClick={togSidebar} className="mr-4">
@@ -45,8 +46,8 @@ const AdLayout = () => {
           <h1 className="text-xl font-medium">Admin Dashboard</h1>
         </div>
 
-        {/* ✅ PAGE CONTENT */}
-        <div className="flex-1 p-4 md:p-6 overflow-auto">
+        {/* ✅ PAGE CONTENT - SCROLLABLE */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </div>
       </div>
