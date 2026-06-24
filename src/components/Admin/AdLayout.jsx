@@ -25,7 +25,7 @@ const AdLayout = () => {
         </div>
       )}
 
-      <div className={`bg-gray-900 w-64 min-h-screen fixed text-white absolute md:relative transform ${isSideOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 md:translate-x-0 md:static md:block z-20`}>
+      <div className={`bg-gray-900 w-64 min-h-screen fixed text-white md:relative transform ${isSideOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 md:translate-x-0 md:static md:block z-20`}>
         <AdSidebar />
       </div>
 
