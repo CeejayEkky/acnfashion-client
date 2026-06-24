@@ -38,7 +38,6 @@ export const loginUser = createAsyncThunk(
       console.log("✅ Login success:", response.data);
       
       if (response.data.success && response.data.token) {
-        // ✅ Clean token before storing
         const token = cleanToken(response.data.token);
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
         localStorage.setItem("userToken", token);
@@ -74,7 +73,6 @@ export const regUser = createAsyncThunk(
       console.log("✅ Register success:", response.data);
       
       if (response.data.success && response.data.token) {
-        // ✅ Clean token before storing
         const token = cleanToken(response.data.token);
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
         localStorage.setItem("userToken", token);
@@ -99,6 +97,7 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    // ✅ FIXED: Logout without redirect (let component handle it)
     logout: (state) => {
       state.user = null;
       state.guestId = `guest_${new Date().getTime()}`;
@@ -107,7 +106,6 @@ const authSlice = createSlice({
       localStorage.removeItem("userToken");
       localStorage.setItem("guestId", state.guestId);
       toast.success("Logged out successfully");
-      window.location.href = "/login";
     },
     generateNewGuestId: (state) => {
       state.guestId = `guest_${new Date().getTime()}`;

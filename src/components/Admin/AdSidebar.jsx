@@ -13,15 +13,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { logout } from "../../redux/slices/authSlice";
 import { clearCart } from "../../redux/slices/cartSlice";
-import axios from "axios";
+import { toast } from "sonner";
 
 const AdSidebar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [pendingCount, setPendingCount] = useState(0);
-  
-  // ✅ Get unreadCount from Redux
-  const { unreadCount } = useSelector((state) => state.messages);
+  const { unreadCount } = useSelector((state) => state.messages || { unreadCount: 0 });
 
   // ✅ Fetch pending reviews count
   useEffect(() => {
@@ -30,7 +28,7 @@ const AdSidebar = () => {
         const token = localStorage.getItem("userToken");
         const cleanToken = token?.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
         
-        const response = await axios.get(
+        const response = await fetch(
           `${import.meta.env.VITE_BACKEND_URL}/api/reviews/admin`,
           {
             headers: {
@@ -39,24 +37,28 @@ const AdSidebar = () => {
           }
         );
         
-        const pending = response.data.reviews.filter(r => !r.isApproved).length;
-        setPendingCount(pending);
+        if (response.ok) {
+          const data = await response.json();
+          const pending = data.reviews?.filter(r => !r.isApproved).length || 0;
+          setPendingCount(pending);
+        }
       } catch (error) {
         console.error("Failed to fetch pending count:", error);
       }
     };
 
     fetchPendingCount();
-    
-    // Refresh pending count every 30 seconds
     const interval = setInterval(fetchPendingCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
+  // ✅ FIXED: Logout handler - use navigate from react-router
   const handLogout = () => {
     dispatch(logout());
     dispatch(clearCart());
-    navigate("/");
+    // ✅ Use navigate instead of window.location
+    navigate("/login");
+    toast.info("You have been logged out");
   };
 
   return (
@@ -112,7 +114,6 @@ const AdSidebar = () => {
           <span>Orders</span>
         </NavLink>
 
-        {/* ✅ Reviews Link */}
         <NavLink
           to="/admin/reviews"
           className={({ isActive }) =>
@@ -130,7 +131,6 @@ const AdSidebar = () => {
           )}
         </NavLink>
 
-        {/* ✅ Messages Link */}
         <NavLink
           to="/admin/messages"
           className={({ isActive }) =>
