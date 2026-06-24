@@ -1,7 +1,8 @@
+// frontend/src/components/Admin/AdLayout.js
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
 import AdSidebar from "./AdSidebar";
-import { Outlet } from "react-router-dom"
+import { Outlet } from "react-router-dom";
 
 const AdLayout = () => {
   const [isSideOpen, setIsSideOpen] = useState(false);
@@ -11,26 +12,43 @@ const AdLayout = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col md:flex-row">
-      <div className="flex md:hidden z-20 p-4 bg-gray-900 text-white">
-        <button onClick={togSidebar}>
-          <FaBars size={24} className="cursor-pointer" />
-        </button>
-        <h1 className="ml-4 text-xl font-medium">Admin Dashboard</h1>
-      </div>
-
-      {isSideOpen && (
-        <div className="fixed inset-0 z-10 bg-black bg-opacity-50 md:hidden" onClick={togSidebar}>
-
-        </div>
-      )}
-
-      <div className={`bg-gray-900 w-64 min-h-screen fixed text-white md:relative transform ${isSideOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 md:translate-x-0 md:static md:block z-20`}>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* ✅ SIDEBAR - Fixed on desktop, sliding on mobile */}
+      <div
+        className={`
+          fixed lg:relative 
+          z-30 
+          transition-transform duration-300 ease-in-out
+          ${isSideOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:translate-x-0
+          h-screen
+        `}
+      >
         <AdSidebar />
       </div>
 
-      <div className="grow p-6 overflow-auto">
-        <Outlet />
+      {/* ✅ MOBILE OVERLAY */}
+      {isSideOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
+          onClick={togSidebar}
+        />
+      )}
+
+      {/* ✅ MAIN CONTENT */}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* ✅ MOBILE HEADER */}
+        <div className="lg:hidden sticky top-0 z-10 bg-gray-900 text-white p-4 flex items-center">
+          <button onClick={togSidebar} className="mr-4">
+            <FaBars size={24} className="cursor-pointer" />
+          </button>
+          <h1 className="text-xl font-medium">Admin Dashboard</h1>
+        </div>
+
+        {/* ✅ PAGE CONTENT */}
+        <div className="flex-1 p-4 md:p-6 overflow-auto">
+          <Outlet />
+        </div>
       </div>
     </div>
   );

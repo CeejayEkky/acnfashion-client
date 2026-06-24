@@ -21,7 +21,7 @@ const AdSidebar = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const { unreadCount } = useSelector((state) => state.messages || { unreadCount: 0 });
 
-  // ✅ Fetch pending reviews count
+  // Fetch pending reviews count
   useEffect(() => {
     const fetchPendingCount = async () => {
       try {
@@ -52,123 +52,124 @@ const AdSidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ FIXED: Logout handler - use navigate from react-router
   const handLogout = () => {
     dispatch(logout());
     dispatch(clearCart());
-    // ✅ Use navigate instead of window.location
     navigate("/login");
     toast.info("You have been logged out");
   };
 
   return (
-    <div className="p-6">
-      <Link
-        style={{ fontFamily: "Candara" }}
-        to="/admin"
-        className="text-2xl font-bold"
-      >
-        <div className="mb-6 border rounded-3xl p-4 bg-gray-950 cursor-pointer hover:bg-gray-800">
-          A.C.N <br /> Fashion House
+    // ✅ FIXED: Sticky sidebar that stays in place
+    <div className="w-64 bg-gray-900 text-white h-screen sticky top-0 overflow-y-auto flex-shrink-0">
+      <div className="p-6">
+        <Link
+          style={{ fontFamily: "Candara" }}
+          to="/admin"
+          className="text-2xl font-bold"
+        >
+          <div className="mb-6 border rounded-3xl p-4 bg-gray-950 cursor-pointer hover:bg-gray-800 transition">
+            A.C.N <br /> Fashion House
+          </div>
+        </Link>
+
+        <h2 className="text-xl font-medium mb-6 border border-r-0 rounded-bl-2xl rounded-tl-2xl p-2">
+          Admin Dashboard
+        </h2>
+
+        <nav className="flex flex-col space-y-2">
+          <NavLink
+            to="/admin/users"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+                : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2 transition"
+            }
+          >
+            <FaUser />
+            <span>Users</span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/products"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+                : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2 transition"
+            }
+          >
+            <FaBoxOpen />
+            <span>Products</span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/orders"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+                : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2 transition"
+            }
+          >
+            <FaClipboardList />
+            <span>Orders</span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/reviews"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+                : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2 transition"
+            }
+          >
+            <FaStar />
+            <span>Reviews</span>
+            {pendingCount > 0 && (
+              <span className="ml-auto bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full font-bold">
+                {pendingCount}
+              </span>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/admin/messages"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+                : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2 transition"
+            }
+          >
+            <FaEnvelope />
+            <span>Messages</span>
+            {unreadCount > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </NavLink>
+
+          <NavLink
+            to="/discover/all"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
+                : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2 transition"
+            }
+          >
+            <FaStore />
+            <span>Store</span>
+          </NavLink>
+        </nav>
+
+        <div className="mt-6">
+          <button
+            onClick={handLogout}
+            className="cursor-pointer w-full bg-red-500 font-bold hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center space-x-2 transition"
+          >
+            <FaSignOutAlt />
+            <span>Logout</span>
+          </button>
         </div>
-      </Link>
-
-      <h2 className="text-xl font-medium mb-6 border border-r-0 rounded-bl-2xl rounded-tl-2xl p-2">
-        Admin Dashboard
-      </h2>
-
-      <nav className="flex flex-col space-y-2">
-        <NavLink
-          to="/admin/users"
-          className={({ isActive }) =>
-            isActive
-              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
-              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
-          }
-        >
-          <FaUser />
-          <span>Users</span>
-        </NavLink>
-
-        <NavLink
-          to="/admin/products"
-          className={({ isActive }) =>
-            isActive
-              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
-              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
-          }
-        >
-          <FaBoxOpen />
-          <span>Products</span>
-        </NavLink>
-
-        <NavLink
-          to="/admin/orders"
-          className={({ isActive }) =>
-            isActive
-              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
-              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
-          }
-        >
-          <FaClipboardList />
-          <span>Orders</span>
-        </NavLink>
-
-        <NavLink
-          to="/admin/reviews"
-          className={({ isActive }) =>
-            isActive
-              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
-              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
-          }
-        >
-          <FaStar />
-          <span>Reviews</span>
-          {pendingCount > 0 && (
-            <span className="ml-auto bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full font-bold">
-              {pendingCount}
-            </span>
-          )}
-        </NavLink>
-
-        <NavLink
-          to="/admin/messages"
-          className={({ isActive }) =>
-            isActive
-              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
-              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
-          }
-        >
-          <FaEnvelope />
-          <span>Messages</span>
-          {unreadCount > 0 && (
-            <span className="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-              {unreadCount}
-            </span>
-          )}
-        </NavLink>
-
-        <NavLink
-          to="/discover/all"
-          className={({ isActive }) =>
-            isActive
-              ? "bg-gray-700 text-white py-3 px-4 rounded flex items-center space-x-2"
-              : "text-gray-300 font-bold hover:bg-gray-700 hover:text-white py-3 px-4 rounded flex items-center space-x-2"
-          }
-        >
-          <FaStore />
-          <span>Store</span>
-        </NavLink>
-      </nav>
-
-      <div className="mt-6">
-        <button
-          onClick={handLogout}
-          className="cursor-pointer w-full bg-red-500 font-bold hover:bg-red-600 text-white py-2 px-4 rounded flex items-center justify-center space-x-2"
-        >
-          <FaSignOutAlt />
-          <span>Logout</span>
-        </button>
       </div>
     </div>
   );
