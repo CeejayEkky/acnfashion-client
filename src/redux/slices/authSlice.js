@@ -7,6 +7,12 @@ const userFromStorage = localStorage.getItem("userInfo")
   ? JSON.parse(localStorage.getItem("userInfo"))
   : null;
 
+// ✅ Clean token helper
+const cleanToken = (token) => {
+  if (!token) return null;
+  return token.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
+};
+
 const initGuestId = localStorage.getItem("guestId") || `guest_${new Date().getTime()}`;
 localStorage.setItem("guestId", initGuestId);
 
@@ -17,7 +23,7 @@ const initialState = {
   error: null,
 };
 
-// ✅ LOGIN - Use axios directly
+// ✅ LOGIN
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (userData, { rejectWithValue }) => {
@@ -32,17 +38,19 @@ export const loginUser = createAsyncThunk(
       console.log("✅ Login success:", response.data);
       
       if (response.data.success && response.data.token) {
+        // ✅ Clean token before storing
+        const token = cleanToken(response.data.token);
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
-        localStorage.setItem("userToken", response.data.token);
+        localStorage.setItem("userToken", token);
+        toast.success(`Welcome ${response.data.user.name}! 🎉`);
         return response.data.user;
       } else {
         throw new Error(response.data.message || "Login failed");
       }
     } catch (error) {
       console.error("❌ Login error:", error.response?.data || error.message);
-      
       const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
-      
+      toast.error(errorMessage);
       return rejectWithValue({ 
         message: errorMessage,
         status: error.response?.status 
@@ -51,7 +59,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-// ✅ REGISTER - Use axios directly
+// ✅ REGISTER
 export const regUser = createAsyncThunk(
   "auth/regUser",
   async (userData, { rejectWithValue }) => {
@@ -66,17 +74,19 @@ export const regUser = createAsyncThunk(
       console.log("✅ Register success:", response.data);
       
       if (response.data.success && response.data.token) {
+        // ✅ Clean token before storing
+        const token = cleanToken(response.data.token);
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
-        localStorage.setItem("userToken", response.data.token);
+        localStorage.setItem("userToken", token);
+        toast.success(`Welcome ${response.data.user.name}! 🎉`);
         return response.data.user;
       } else {
         throw new Error(response.data.message || "Registration failed");
       }
     } catch (error) {
       console.error("❌ Register error:", error.response?.data || error.message);
-      
       const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
-      
+      toast.error(errorMessage);
       return rejectWithValue({ 
         message: errorMessage,
         status: error.response?.status 
@@ -97,6 +107,7 @@ const authSlice = createSlice({
       localStorage.removeItem("userToken");
       localStorage.setItem("guestId", state.guestId);
       toast.success("Logged out successfully");
+      window.location.href = "/login";
     },
     generateNewGuestId: (state) => {
       state.guestId = `guest_${new Date().getTime()}`;
