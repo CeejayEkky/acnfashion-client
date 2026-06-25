@@ -1,4 +1,4 @@
-// frontend/src/components/Admin/AdSidebar.js
+// frontend/src/components/Admin/AdSidebar.jsx
 import React, { useEffect, useState } from "react";
 import {
   FaBoxOpen,
@@ -19,8 +19,14 @@ const AdSidebar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [pendingCount, setPendingCount] = useState(0);
+  
+  // ✅ Get unreadCount from messages
   const { unreadCount } = useSelector((state) => state.messages || { unreadCount: 0 });
+  
+  // ✅ Get orders from adminOrders state
+  const { orders } = useSelector((state) => state.adminOrders || { orders: [] });
 
+  // Fetch pending reviews count
   useEffect(() => {
     const fetchPendingCount = async () => {
       try {
@@ -59,7 +65,6 @@ const AdSidebar = () => {
   };
 
   return (
-    // ✅ MINIMAL SIDEBAR
     <div className="w-52 bg-gray-900 text-white h-full flex flex-col overflow-y-auto flex-shrink-0">
       <div className="p-3 flex-1">
         {/* Logo */}
@@ -101,6 +106,7 @@ const AdSidebar = () => {
             <span>Products</span>
           </NavLink>
 
+          {/* ✅ Orders Link with Badge */}
           <NavLink
             to="/admin/orders"
             className={({ isActive }) =>
@@ -111,6 +117,11 @@ const AdSidebar = () => {
           >
             <FaClipboardList className="w-3.5 h-3.5" />
             <span>Orders</span>
+            {orders?.length > 0 && (
+              <span className="ml-auto bg-blue-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                {orders.length}
+              </span>
+            )}
           </NavLink>
 
           <NavLink

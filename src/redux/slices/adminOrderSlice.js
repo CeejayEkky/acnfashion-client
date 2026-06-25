@@ -53,8 +53,6 @@ export const updateOrderStatus = createAsyncThunk(
         throw new Error("No token found");
       }
       
-      console.log(`📤 Sending update: Order ${id} -> "${status}"`);
-      
       const response = await axios.put(
         `${API_URL}/api/admin/orders/${id}`,
         { status },
@@ -66,21 +64,13 @@ export const updateOrderStatus = createAsyncThunk(
         }
       );
       
-      console.log(`✅ Order ${id} updated to "${status}"`);
-      
-      // ✅ Immediately update the order in state
+      // ✅ Update in state immediately
       dispatch(updateOrderInState(response.data));
-      
-      // ✅ Show toast
       toast.success(`Order status updated to "${status}"! ✅`);
-      
-      // ✅ Refetch to ensure consistency
       dispatch(fetchAllOrders());
       
       return response.data;
     } catch (error) {
-      console.error("❌ Update order error:", error);
-      
       if (error.response?.status === 401) {
         toast.error("Session expired. Please login again.");
         localStorage.removeItem("userToken");
@@ -89,6 +79,46 @@ export const updateOrderStatus = createAsyncThunk(
       }
       
       const errorMsg = error.response?.data?.message || "Failed to update order status";
+      toast.error(errorMsg);
+      return rejectWithValue(error.response?.data || { message: errorMsg });
+    }
+  }
+);
+
+// ✅ DELETE ORDER - ADD THIS
+export const deleteOrders = createAsyncThunk(
+  "adminOrders/deleteOrders",
+  async (id, { rejectWithValue, dispatch }) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error("No token found");
+      }
+      
+      await axios.delete(
+        `${API_URL}/api/admin/orders/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      
+      // ✅ Remove from state immediately
+      dispatch(removeOrderFromState(id));
+      toast.success("Order deleted successfully! 🗑️");
+      dispatch(fetchAllOrders());
+      
+      return id;
+    } catch (error) {
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("userInfo");
+        window.location.href = "/login";
+      }
+      
+      const errorMsg = error.response?.data?.message || "Failed to delete order";
       toast.error(errorMsg);
       return rejectWithValue(error.response?.data || { message: errorMsg });
     }
@@ -105,14 +135,20 @@ const adminOrderSlice = createSlice({
     error: null,
   },
   reducers: {
-    // ✅ Immediately update order in state
+    // ✅ Update order in state
     updateOrderInState: (state, action) => {
       const updatedOrder = action.payload;
       const index = state.orders.findIndex((order) => order._id === updatedOrder._id);
       if (index !== -1) {
         state.orders[index] = updatedOrder;
-        console.log(`✅ Order ${updatedOrder._id} updated in state to "${updatedOrder.status}"`);
       }
+    },
+    // ✅ Remove order from state
+    removeOrderFromState: (state, action) => {
+      const orderId = action.payload;
+      state.orders = state.orders.filter((order) => order._id !== orderId);
+      state.totalOrders = state.orders.length;
+      state.totalSales = state.orders.reduce((sum, order) => sum + order.totalPrice, 0);
     },
   },
   extraReducers: (builder) => {
@@ -138,14 +174,25 @@ const adminOrderSlice = createSlice({
       })
       .addCase(updateOrderStatus.fulfilled, (state) => {
         state.loading = false;
-        // Order already updated via updateOrderInState
       })
       .addCase(updateOrderStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to update order";
+      })
+      // ✅ Delete order
+      .addCase(deleteOrders.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteOrders.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(deleteOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || "Failed to delete order";
       });
   },
 });
 
-export const { updateOrderInState } = adminOrderSlice.actions;
+export const { updateOrderInState, removeOrderFromState } = adminOrderSlice.actions;
 export default adminOrderSlice.reducer;
