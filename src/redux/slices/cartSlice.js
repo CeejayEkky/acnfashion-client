@@ -1,16 +1,25 @@
 // frontend/src/redux/slices/cartSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import apiClient from "../../utils/axios";
+import axios from "axios";
 
 // ✅ Load cart from localStorage
 const loadCartFromStorage = () => {
   const storedCart = localStorage.getItem("cart");
-  return storedCart ? JSON.parse(storedCart) : { products: [] };
+  return storedCart ? JSON.parse(storedCart) : { products: [], totalPrice: 0 };
 };
 
-// ✅ Save cart to localStorage
 const saveCartToStorage = (cart) => {
   localStorage.setItem("cart", JSON.stringify(cart));
+};
+
+// ✅ Get guest ID from localStorage or create one
+const getGuestId = () => {
+  let guestId = localStorage.getItem("guestId");
+  if (!guestId) {
+    guestId = `guest_${Date.now()}`;
+    localStorage.setItem("guestId", guestId);
+  }
+  return guestId;
 };
 
 // ✅ FETCH cart
@@ -18,8 +27,16 @@ export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await apiClient.get("/api/cart");
-      return response.data.cart || response.data;
+      const userId = JSON.parse(localStorage.getItem("userInfo"))?._id;
+      const guestId = getGuestId();
+      
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          params: { userId, guestId },
+        }
+      );
+      return response.data.cart;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: "Failed to fetch cart" });
     }
@@ -31,31 +48,47 @@ export const addToCart = createAsyncThunk(
   "cart/addToCart",
   async ({ productId, quantity, size, color }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post("/api/cart", {
-        productId,
-        quantity,
-        size,
-        color,
-      });
-      return response.data.cart || response.data;
+      const userId = JSON.parse(localStorage.getItem("userInfo"))?._id;
+      const guestId = getGuestId();
+      
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          productId,
+          quantity,
+          size,
+          color,
+          userId,
+          guestId,
+        }
+      );
+      return response.data.cart;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: "Failed to add to cart" });
     }
   }
 );
 
-// ✅ UPDATE cart item quantity
+// ✅ UPDATE cart item
 export const updateCartItQuantity = createAsyncThunk(
   "cart/updateCartItQuantity",
   async ({ productId, quantity, size, color }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.put("/api/cart", {
-        productId,
-        quantity,
-        size,
-        color,
-      });
-      return response.data.cart || response.data;
+      const userId = JSON.parse(localStorage.getItem("userInfo"))?._id;
+      const guestId = getGuestId();
+      
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          productId,
+          quantity,
+          size,
+          color,
+          userId,
+          guestId,
+        }
+      );
+      return response.data.cart;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: "Failed to update cart" });
     }
@@ -67,44 +100,48 @@ export const removeFromCart = createAsyncThunk(
   "cart/removeFromCart",
   async ({ productId, size, color }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.delete("/api/cart", {
-        data: {
-          productId,
-          size,
-          color,
-        },
-      });
-      return response.data.cart || response.data;
+      const userId = JSON.parse(localStorage.getItem("userInfo"))?._id;
+      const guestId = getGuestId();
+      
+      const response = await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart`,
+        {
+          data: {
+            productId,
+            size,
+            color,
+            userId,
+            guestId,
+          },
+        }
+      );
+      return response.data.cart;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: "Failed to remove from cart" });
     }
   }
 );
 
-// ✅ MERGE guest cart with user cart
+// ✅ MERGE cart (when user logs in)
 export const mergeCart = createAsyncThunk(
   "cart/mergeCart",
   async ({ guestId }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post("/api/cart/merge", {
-        guestId,
-      });
-      return response.data.cart || response.data;
+      const token = localStorage.getItem("userToken");
+      const cleanToken = token?.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
+      
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart/merge`,
+        { guestId },
+        {
+          headers: {
+            Authorization: `Bearer ${cleanToken}`,
+          },
+        }
+      );
+      return response.data.cart;
     } catch (error) {
       return rejectWithValue(error.response?.data || { message: "Failed to merge cart" });
-    }
-  }
-);
-
-// ✅ CLEAR cart
-export const clearCartThunk = createAsyncThunk(
-  "cart/clearCartThunk",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await apiClient.delete("/api/cart/clear");
-      return response.data.cart || { products: [] };
-    } catch (error) {
-      return rejectWithValue(error.response?.data || { message: "Failed to clear cart" });
     }
   }
 );
@@ -118,100 +155,76 @@ const cartSlice = createSlice({
   },
   reducers: {
     clearCart: (state) => {
-      state.cart = { products: [] };
+      state.cart = { products: [], totalPrice: 0 };
       localStorage.removeItem("cart");
     },
   },
   extraReducers: (builder) => {
     builder
-      // ✅ Fetch cart
       .addCase(fetchCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload || { products: [] };
+        state.cart = action.payload || { products: [], totalPrice: 0 };
         saveCartToStorage(action.payload);
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to fetch cart";
       })
-
-      // ✅ Add to cart
       .addCase(addToCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload || { products: [] };
+        state.cart = action.payload || { products: [], totalPrice: 0 };
         saveCartToStorage(action.payload);
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to add to cart";
       })
-
-      // ✅ Update cart item
       .addCase(updateCartItQuantity.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(updateCartItQuantity.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload || { products: [] };
+        state.cart = action.payload || { products: [], totalPrice: 0 };
         saveCartToStorage(action.payload);
       })
       .addCase(updateCartItQuantity.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to update cart";
       })
-
-      // ✅ Remove from cart
       .addCase(removeFromCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(removeFromCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload || { products: [] };
+        state.cart = action.payload || { products: [], totalPrice: 0 };
         saveCartToStorage(action.payload);
       })
       .addCase(removeFromCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to remove from cart";
       })
-
-      // ✅ Merge cart
       .addCase(mergeCart.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(mergeCart.fulfilled, (state, action) => {
         state.loading = false;
-        state.cart = action.payload || { products: [] };
+        state.cart = action.payload || { products: [], totalPrice: 0 };
         saveCartToStorage(action.payload);
       })
       .addCase(mergeCart.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Failed to merge cart";
-      })
-
-      // ✅ Clear cart
-      .addCase(clearCartThunk.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(clearCartThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        state.cart = action.payload || { products: [] };
-        localStorage.removeItem("cart");
-      })
-      .addCase(clearCartThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.message || "Failed to clear cart";
       });
   },
 });

@@ -12,7 +12,6 @@ const CartContent = ({ cart }) => {
 
   const hAddToCart = (productId, delta, quantity, size, color) => {
     const newQty = quantity + delta;
-
     if (newQty >= 1) {
       dispatch(
         updateCartItQuantity({
@@ -29,7 +28,6 @@ const CartContent = ({ cart }) => {
     dispatch(removeFromCart({ productId, size, color }));
   };
 
-  // ✅ If cart is empty, show message
   if (!cart || !cart.products || cart.products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -47,7 +45,6 @@ const CartContent = ({ cart }) => {
           key={i} 
           className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 py-4 border-b border-gray-100 last:border-0"
         >
-          {/* ✅ Image - Full width on mobile */}
           <div className="w-full sm:w-20 flex-shrink-0">
             <img
               src={prod.image}
@@ -59,7 +56,6 @@ const CartContent = ({ cart }) => {
             />
           </div>
           
-          {/* ✅ Product Info - Flex on mobile */}
           <div className="flex-1 w-full sm:w-auto">
             <h3 className="font-medium text-gray-800 text-sm sm:text-base line-clamp-2">
               {prod.name}
@@ -68,7 +64,6 @@ const CartContent = ({ cart }) => {
               Size: {prod.size} | Color: {prod.color}
             </p>
             
-            {/* ✅ Quantity - Full width on mobile */}
             <div className="flex items-center gap-3 mt-2">
               <button
                 onClick={() =>
@@ -80,8 +75,7 @@ const CartContent = ({ cart }) => {
                     prod.color
                   )
                 }
-                className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100 transition active:bg-gray-200"
-                aria-label="Decrease quantity"
+                className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100 transition"
               >
                 -
               </button>
@@ -96,15 +90,13 @@ const CartContent = ({ cart }) => {
                     prod.color
                   )
                 }
-                className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100 transition active:bg-gray-200"
-                aria-label="Increase quantity"
+                className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-lg hover:bg-gray-100 transition"
               >
                 +
               </button>
             </div>
           </div>
           
-          {/* ✅ Price & Delete - Align right on desktop */}
           <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
             <p className="font-semibold text-gray-800 text-sm sm:text-base">
               ₦{prod.price?.toLocaleString() || 0}
@@ -114,7 +106,6 @@ const CartContent = ({ cart }) => {
                 hRemoveFromCart(prod.productId, prod.size, prod.color)
               }
               className="text-red-400 hover:text-red-600 transition p-1 hover:bg-red-50 rounded-full"
-              aria-label="Remove item"
             >
               <RiDeleteBin2Line className="h-5 w-5" />
             </button>
