@@ -1,5 +1,5 @@
-// frontend/src/components/Admin/UserHandle.js
-import React, { useEffect, useState } from "react";
+// frontend/src/components/Admin/UserHandle.jsx
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { addUser, deleteUser, fetchUsers, updateUser } from "../../redux/slices/adminSlice";
@@ -15,17 +15,38 @@ const UserHandle = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
 
-  useEffect(() => {
-    if (user && user.role !== "admin") {
-      navigate("/");
-    }
-  }, [user, navigate]);
+  // ✅ Real-time polling for new users
+  const prevCountRef = useRef(0);
+  const firstRunRef = useRef(true);
 
   useEffect(() => {
-    if (user && user.role === "admin") {
-      dispatch(fetchUsers());
+    if (!user || user.role !== "admin") {
+      navigate("/");
+      return;
     }
-  }, [dispatch, user]);
+
+    const fetchAndCheck = async () => {
+      try {
+        const result = await dispatch(fetchUsers()).unwrap();
+        const currentCount = result?.length || 0;
+        if (!firstRunRef.current && currentCount > prevCountRef.current) {
+          const newCount = currentCount - prevCountRef.current;
+          toast.info(`👤 ${newCount} new user${newCount > 1 ? 's' : ''} registered!`);
+        }
+        prevCountRef.current = currentCount;
+        firstRunRef.current = false;
+      } catch (error) {
+        // ignore
+      }
+    };
+
+    // Initial fetch
+    fetchAndCheck();
+
+    // Poll every 5 seconds
+    const interval = setInterval(fetchAndCheck, 5000);
+    return () => clearInterval(interval);
+  }, [dispatch, user, navigate]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,32 +56,22 @@ const UserHandle = () => {
   });
 
   const handleChangeAll = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!formData.name || !formData.email || !formData.password) {
       toast.error("Please fill in all fields");
       return;
     }
-
     setIsSubmitting(true);
-    
     try {
       await dispatch(addUser(formData)).unwrap();
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        role: "customer",
-      });
+      setFormData({ name: "", email: "", password: "", role: "customer" });
+      // Fetch updated list (will be handled by polling)
     } catch (error) {
-      console.error("Add user error:", error);
+      toast.error(error?.message || "Failed to add user");
     } finally {
       setIsSubmitting(false);
     }
@@ -71,7 +82,7 @@ const UserHandle = () => {
     try {
       await dispatch(updateUser({ id: userId, role: newRole })).unwrap();
     } catch (error) {
-      console.error("Update role error:", error);
+      toast.error(error?.message || "Failed to update role");
     } finally {
       setUpdatingId(null);
     }
@@ -82,20 +93,18 @@ const UserHandle = () => {
       setDeletingId(userId);
       try {
         await dispatch(deleteUser(userId)).unwrap();
-        // ✅ User is instantly removed from UI via removeUserFromState
       } catch (error) {
-        console.error("Delete user error:", error);
+        toast.error(error?.message || "Failed to delete user");
       } finally {
         setDeletingId(null);
       }
     }
   };
 
-  // ✅ Show loading overlay while fetching
   if (loading && users.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p className="text-blue-500 text-lg">Loading users...</p>
+        <div className="loader" />
       </div>
     );
   }
@@ -103,7 +112,6 @@ const UserHandle = () => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">User Management</h2>
-      
       {error && <p className="text-red-500 mb-4">Error: {error}</p>}
       
       <div className="p-6 rounded-lg mb-6 bg-gray-50">
@@ -120,7 +128,6 @@ const UserHandle = () => {
               required
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">Email</label>
             <input
@@ -132,7 +139,6 @@ const UserHandle = () => {
               required
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">Password</label>
             <input
@@ -145,7 +151,6 @@ const UserHandle = () => {
               minLength={6}
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-gray-700 font-medium mb-2">Role</label>
             <select
@@ -158,11 +163,10 @@ const UserHandle = () => {
               <option value="admin">Admin</option>
             </select>
           </div>
-
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 disabled:opacity-50"
           >
             {isSubmitting ? "Adding..." : "Add User"}
           </button>
@@ -197,15 +201,12 @@ const UserHandle = () => {
                       <option value="customer">Customer</option>
                       <option value="admin">Admin</option>
                     </select>
-                    {updatingId === user._id && (
-                      <span className="ml-2 text-xs text-blue-500">Updating...</span>
-                    )}
                   </td>
                   <td className="p-4">
                     <button
                       onClick={() => handleDelUser(user._id)}
                       disabled={deletingId === user._id}
-                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm disabled:opacity-50"
                     >
                       {deletingId === user._id ? "Deleting..." : "Delete"}
                     </button>

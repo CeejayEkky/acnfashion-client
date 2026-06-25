@@ -1,155 +1,111 @@
-import React, { useEffect, useState } from "react";
+// frontend/src/pages/Login.jsx
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import Logo from "../assets/cont.jpeg";
-import { loginUser } from "../redux/slices/authSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { mergeCart } from "../redux/slices/cartSlice";
+import { loginUser, clearError } from "../redux/slices/authSlice";
 import { toast } from "sonner";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Logo from "../assets/cont.jpeg";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, guestId, loading, error } = useSelector((state) => state.auth);
-  const { cart } = useSelector((state) => state.cart);
+  const { user, loading, error } = useSelector((state) => state.auth);
 
-  // get redirect parameter and check if it's checkout or something
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
-  const isCheckoutRedirect = redirect.includes("checkout");
 
   useEffect(() => {
     if (user) {
-      if (cart?.products.length > 0 && guestId) {
-        dispatch(mergeCart({ guestId, user })).then(() => {
-          navigate(isCheckoutRedirect ? "/checkout" : "/");
-        });
-      } else {
-        navigate(isCheckoutRedirect ? "/checkout" : "/");
-      }
+      toast.success(`Welcome back, ${user.name}! 🎉`);
+      navigate(redirect);
     }
-  }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
+  }, [user, navigate, redirect]);
 
-  const hSubmit = (e) => {
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "Login failed. Please try again.");
+    }
+  }, [error]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!email || !password) {
       toast.error("Please fill in all fields");
       return;
     }
-
+    dispatch(clearError());
     dispatch(loginUser({ email, password }));
   };
 
-  useEffect(() => {
-    if (error) {
-      toast.error(
-        error.message || "Invalid email or password. Please try again.",
-        {
-          duration: 3000,
-        },
-      );
-    }
-  }, [error]);
-
-  useEffect(() => {
-    if (user) {
-      toast.success(`Welcome back, ${user.name || 'User'}!`, {
-        duration: 2000,
-      });
-      if (cart?.products.length > 0 && guestId) {
-        dispatch(mergeCart({ guestId, user })).then(() => {
-          navigate(isCheckoutRedirect ? "/checkout" : "/");
-        });
-      } else {
-        navigate(isCheckoutRedirect ? "/checkout" : "/");
-      }
-    }
-  }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
-
   return (
-    <div className="flex">
-      <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-8 md:p-12">
-        <form
-          onSubmit={hSubmit}
-          className="w-full max-w-xl bg-white p-8 rounded-lg border shadow-sm"
-        >
-          <div className="flex mb-3 justify-center">
-            <h2 className="text-blue-950 text-xl font-medium">
-              A.C.N Fashion House
-            </h2>
+    <div className="flex flex-col md:flex-row min-h-screen">
+      {/* ✅ Form Section - Full width on mobile */}
+      <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-12 order-2 md:order-1">
+        <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 md:p-8 rounded-lg border shadow-sm">
+          <div className="flex mb-4 justify-center">
+            <h2 className="text-blue-950 text-lg md:text-xl font-medium">A.C.N Fashion House</h2>
           </div>
-          <h2 className="text-2xl font-bold text-center mb-2">
-            Hey, let's connect!
-          </h2>
-          <p className="text-center mb-6">Please provide your login details</p>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error.message || "Invalid email or password"}
-            </div>
-          )}
-
+          <h2 className="text-xl md:text-2xl font-bold text-center mb-2">Hey, let's connect!</h2>
+          <p className="text-center text-sm md:text-base mb-6">Please provide your login details</p>
+          
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-2">Email</label>
-
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="Enter your email address"
+              required
+              disabled={loading}
             />
           </div>
-          <div className="mb-4">
+          
+          <div className="mb-6 relative">
             <label className="block text-sm font-semibold mb-2">Password</label>
-
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12 text-sm"
               placeholder="Enter your password"
+              required
+              disabled={loading}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 bottom-3 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+            </button>
           </div>
+          
           <button
             type="submit"
-            className={`w-full text-white p-2 rounded-lg font-semibold transition cursor-pointer ${
-              loading
-                ? "bg-blue-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-800"
-            }`}
             disabled={loading}
+            className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-800 transition cursor-pointer disabled:opacity-50 text-sm"
           >
-            {loading ? (
-              <>
-                <span className="inline-block animate-spin mr-2">⟳</span>
-                Signing in...
-              </>
-            ) : (
-              "Sign in"
-            )}
+            {loading ? "Signing in..." : "Sign in"}
           </button>
+          
           <p className="text-sm text-center flex justify-between mt-4">
-            Don't have an account?
-            <Link
-              to={`/register?redirect=${encodeURIComponent(redirect)}`}
-              className="text-blue-500 hover:underline"
-            >
+            <span className="text-gray-600">Don't have an account?</span>
+            <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-blue-500 hover:underline">
               Register
             </Link>
           </p>
         </form>
       </div>
 
-      <div className="hidden md:block w-1/2 bg-gray-900">
+      {/* ✅ Image Section - Hidden on mobile */}
+      <div className="hidden md:block w-1/2 bg-gray-900 order-1 md:order-2">
         <div className="h-full flex flex-col justify-center items-center">
-          <img
-            src={Logo}
-            alt="Login to account"
-            className="h-135 object-cover w-full"
-          />
+          <img src={Logo} alt="Login" className="h-full object-cover w-full" />
         </div>
       </div>
     </div>
