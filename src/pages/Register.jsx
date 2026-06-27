@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { regUser, clearError } from "../redux/slices/authSlice";
-import { toast } from "sonner";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Logo from "../assets/cont.jpeg";
 
@@ -16,45 +15,24 @@ const Register = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state) => state.auth);
 
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
 
-  // ✅ Redirect when user is authenticated
+  // ✅ Redirect when user is registered
   useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log("✅ User registered, redirecting to:", redirect);
-      toast.success(`Welcome ${user.name}! 🎉`);
+    if (user) {
       navigate(redirect);
     }
-  }, [isAuthenticated, user, navigate, redirect]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Registration failed. Please try again.");
-    }
-  }, [error]);
+  }, [user, navigate, redirect]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!name || !email || !password || password !== confirmPassword || password.length < 6) {
       return;
     }
     dispatch(clearError());
-    const result = await dispatch(regUser({ name, email, password }));
-    // ✅ If registration succeeds, redirect happens in useEffect
-    if (result.error) {
-      toast.error(result.error.message || "Registration failed");
-    }
+    await dispatch(regUser({ name, email, password }));
   };
 
   return (

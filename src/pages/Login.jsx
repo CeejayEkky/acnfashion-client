@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser, clearError } from "../redux/slices/authSlice";
-import { toast } from "sonner";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Logo from "../assets/cont.jpeg";
 
@@ -14,37 +13,24 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, error, isAuthenticated } = useSelector((state) => state.auth);
+  const { user, loading } = useSelector((state) => state.auth);
 
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
 
-  // ✅ Redirect when user is authenticated
+  // ✅ Redirect when user is logged in
   useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log("✅ User authenticated, redirecting to:", redirect);
-      toast.success(`Welcome back, ${user.name}! 🎉`);
+    if (user) {
       navigate(redirect);
     }
-  }, [isAuthenticated, user, navigate, redirect]);
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error.message || "Login failed. Please try again.");
-    }
-  }, [error]);
+  }, [user, navigate, redirect]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error("Please fill in all fields");
       return;
     }
     dispatch(clearError());
-    const result = await dispatch(loginUser({ email, password }));
-    // ✅ If login succeeds, redirect happens in useEffect
-    if (result.error) {
-      toast.error(result.error.message || "Login failed");
-    }
+    await dispatch(loginUser({ email, password }));
   };
 
   return (
