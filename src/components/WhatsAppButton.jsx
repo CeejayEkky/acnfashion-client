@@ -23,7 +23,7 @@ const WhatsAppButton = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const phoneNumber = "2348137004669"; // Your WhatsApp number
+  const phoneNumber = "2348084892300"; // Your WhatsApp number
   const message = "Hi! I'm interested in your products. Can you help me?";
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 

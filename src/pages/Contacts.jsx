@@ -87,7 +87,7 @@ const Contacts = () => {
 
   const contactInfo = [
     { icon: <FaMapMarkerAlt />, title: "Visit Us", detail: "123 Fashion St, Lagos", color: "from-blue-500/20 to-blue-400/10" },
-    { icon: <FaPhone />, title: "Call Us", detail: "+234 813-700-4669", color: "from-blue-400/20 to-blue-300/10" },
+    { icon: <FaPhone />, title: "Call Us", detail: "+234 808-489-2300", color: "from-blue-400/20 to-blue-300/10" },
     { icon: <FaEnvelope />, title: "Email", detail: "info@acnfashion.com", color: "from-purple-500/20 to-blue-400/10" },
     { icon: <FaClock />, title: "Hours", detail: "Mon-Fri: 9am - 8pm", color: "from-blue-300/20 to-blue-500/10" },
   ];
@@ -265,7 +265,7 @@ const Contacts = () => {
                 <a href="#" className="social-glow w-full aspect-square rounded-xl bg-gray-50/50 flex items-center justify-center text-gray-600 hover:text-blue-700 hover:bg-blue-50/50 transition-all duration-300 text-2xl border border-gray-100/50">
                   <FaLinkedin />
                 </a>
-                <a href="https://wa.me/2348137004669" target="_blank" rel="noopener noreferrer" className="social-glow w-full aspect-square rounded-xl bg-gray-50/50 flex items-center justify-center text-gray-600 hover:text-green-500 hover:bg-green-50/50 transition-all duration-300 text-2xl border border-gray-100/50">
+                <a href="https://wa.me/2348084892300" target="_blank" rel="noopener noreferrer" className="social-glow w-full aspect-square rounded-xl bg-gray-50/50 flex items-center justify-center text-gray-600 hover:text-green-500 hover:bg-green-50/50 transition-all duration-300 text-2xl border border-gray-100/50">
                   <FaWhatsapp />
                 </a>
               </div>
