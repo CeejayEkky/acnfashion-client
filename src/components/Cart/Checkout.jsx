@@ -1,14 +1,12 @@
-// frontend/src/components/Cart/Checkout.js
+// frontend/src/components/Cart/Checkout.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FlutterwaveBtn from "./FlutterwaveBtn";
 import { useDispatch, useSelector } from "react-redux";
 import { createCheckout } from "../../redux/slices/checkoutSlice";
 import { clearCart } from "../../redux/slices/cartSlice";
-import { fetchUserOrders } from "../../redux/slices/orderSlice";
 import axios from "axios";
 import { toast } from "sonner";
-import { getToken } from '../../utils/tokenUtils.js'
 
 const shippingfee = 200;
 
@@ -31,22 +29,13 @@ const Checkout = () => {
   });
 
   useEffect(() => {
-    console.log("🔄 Checkout mounted");
-    console.log("👤 User:", user);
-    console.log("🛒 Cart:", cart);
-    
     if (!cart || !cart.products || cart.products.length === 0) {
-      console.log("⚠️ Cart is empty, redirecting...");
       navigate("/");
     }
-  }, [cart, navigate, user]);
+  }, [cart, navigate]);
 
   const handleGetCheckout = async (e) => {
     e.preventDefault();
-    
-    console.log("📝 handleGetCheckout called");
-    console.log("👤 User:", user);
-    console.log("🛒 Cart:", cart);
     
     if (!user) {
       toast.error("Please login to continue");
@@ -62,50 +51,31 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
-      console.log("📤 Creating checkout with:", {
+      const res = await dispatch(createCheckout({
         checkoutItems: cart.products,
         shippingAddress,
         paymentMethod: "Flutterwave",
         totalPrice: cart.totalPrice,
-      });
+      })).unwrap();
       
-      const res = await dispatch(
-        createCheckout({
-          checkoutItems: cart.products,
-          shippingAddress,
-          paymentMethod: "Flutterwave",
-          totalPrice: cart.totalPrice,
-        })
-      );
+      console.log("✅ Checkout response:", res);
       
-      console.log("📥 Create checkout response:", res);
-      
-      if (res.payload && res.payload._id) {
-        console.log("✅ Checkout created with ID:", res.payload._id);
-        setCheckoutId(res.payload._id);
+      if (res && res._id) {
+        setCheckoutId(res._id);
         toast.success("Checkout created! Proceed to payment.");
       } else {
-        console.error("❌ No checkout ID in response:", res);
         toast.error("Failed to create checkout");
       }
     } catch (error) {
       console.error("❌ Checkout error:", error);
-      toast.error("Failed to create checkout. Please try again.");
+      toast.error(error?.message || "Failed to create checkout");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // ✅ PAYMENT SUCCESS - THIS MUST BE CALLED
   const hPaySuccess = async (paymentDetails) => {
-    console.log("💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰");
-    console.log("💰💰💰 PAYMENT SUCCESS CALLED! 💰💰💰");
-    console.log("💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰💰");
-    console.log("Payment Details:", paymentDetails);
-    console.log("Checkout ID:", checkoutId);
-    
     if (!checkoutId) {
-      console.error("❌ No checkoutId found!");
       toast.error("No checkout session found");
       return;
     }
@@ -113,21 +83,10 @@ const Checkout = () => {
     setIsProcessing(true);
     
     try {
-      const token = getToken()
-      console.log("🔑 Token exists:", !!token);
-      console.log("🔑 Token length:", token?.length);
-
-      // ✅ STEP 1: Update payment status
-      if (!token) {
-        console.error("❌ No token found!");
-        toast.error("Please login again");
-        navigate("/login");
-        return;
-      }
-
-      // ✅ STEP 1: Update payment status
-      console.log(`📝 Updating payment for checkout: ${checkoutId}`);
+      const token = localStorage.getItem("userToken");
+      const cleanToken = token?.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
       
+      // Update payment status
       const payResponse = await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/pay`,
         {
@@ -136,70 +95,43 @@ const Checkout = () => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${cleanToken}`,
             'Content-Type': 'application/json',
           },
         }
       );
 
-      console.log("✅ STEP 1 Complete - Payment updated:", payResponse.data);
+      console.log("✅ Payment updated:", payResponse.data);
 
-      // ✅ STEP 2: Finalize the checkout
-      console.log(`📝 STEP 2: Finalizing checkout: ${checkoutId}`);
-      
+      // Finalize checkout
       const finalizeResponse = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/finalize`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${cleanToken}`,
             'Content-Type': 'application/json',
           },
         }
       );
 
-      console.log("✅✅✅ STEP 2 Complete - FINALIZE RESPONSE:", finalizeResponse.data);
+      console.log("✅ Checkout finalized:", finalizeResponse.data);
       
-      // ✅ STEP 3: Clear the cart
-      console.log("📝 STEP 3: Clearing cart...");
+      // Clear cart
       dispatch(clearCart());
       localStorage.removeItem("cart");
-      console.log("✅ Cart cleared!");
-      
-      // ✅ STEP 4: Refresh orders
-      console.log("📝 STEP 4: Refreshing orders...");
-      await dispatch(fetchUserOrders());
-      console.log("✅ Orders refreshed!");
       
       toast.success("Order placed successfully! 🎉");
-      
-      // ✅ STEP 5: Navigate to orders
-      console.log("📝 STEP 5: Navigating to my orders...");
-      setTimeout(() => {
-        navigate("/my-orders");
-      }, 1500);
+      navigate("/order-confirmation");
       
     } catch (error) {
-      console.log("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
-      console.log("❌❌❌ PAYMENT SUCCESS ERROR! ❌❌❌");
-      console.log("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
-      console.log("Error object:", error);
-      console.log("Error response:", error.response?.data);
-      console.log("Error status:", error.response?.status);
-      console.log("Error message:", error.message);
-      
-      if (error.response?.status === 404) {
-        toast.error("Checkout session expired. Please try again.");
-        setCheckoutId(null);
-      } else {
-        toast.error(error.response?.data?.message || "Payment verification failed. Please contact support.");
-      }
+      console.error("❌ Payment error:", error);
+      toast.error(error.response?.data?.message || "Payment failed");
       setIsProcessing(false);
     }
   };
 
   const hPayError = (error) => {
-    console.log("❌❌❌ PAYMENT ERROR CALLED ❌❌❌");
     console.error("Payment error:", error);
     toast.error("Payment failed. Please try again.");
     setIsProcessing(false);
@@ -216,7 +148,6 @@ const Checkout = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto py-10 px-6 tracking-tighter">
-      {/* ── Left: Form ── */}
       <div className="bg-white rounded-lg p-6">
         <h2 className="text-2xl uppercase mb-6">Checkout</h2>
 
@@ -230,11 +161,6 @@ const Checkout = () => {
               className="w-full p-2 border rounded bg-gray-50 cursor-not-allowed"
               disabled
             />
-            {!user?.email && (
-              <p className="text-red-500 text-sm mt-1">
-                ⚠️ Please login to proceed with payment
-              </p>
-            )}
           </div>
 
           <h3 className="text-lg mb-4">Delivery</h3>
@@ -321,8 +247,8 @@ const Checkout = () => {
             {!checkoutId ? (
               <button
                 type="submit"
-                className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition-colors disabled:opacity-50"
                 disabled={isProcessing || !user}
+                className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 {isProcessing ? "Processing..." : "Continue to Payment"}
               </button>
@@ -330,7 +256,7 @@ const Checkout = () => {
               <div>
                 <h3 className="text-lg mb-4">Pay with Flutterwave</h3>
                 <FlutterwaveBtn
-                  amount={cart.totalPrice + shippingfee}
+                  amount={cart.totalPrice}
                   phone={shippingAddress.phone}
                   name={`${shippingAddress.firstName} ${shippingAddress.lastName}`}
                   email={user?.email || ""}
@@ -340,10 +266,7 @@ const Checkout = () => {
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    setCheckoutId(null);
-                    toast.info("You can edit your shipping details");
-                  }}
+                  onClick={() => setCheckoutId(null)}
                   className="w-full mt-3 text-sm text-gray-500 underline"
                 >
                   ← Edit shipping details
@@ -354,7 +277,6 @@ const Checkout = () => {
         </form>
       </div>
 
-      {/* ── Right: Order Summary ── */}
       <div className="bg-gray-50 rounded-lg p-6 h-fit">
         <h3 className="text-2xl uppercase mb-6">Order Summary</h3>
         <div className="space-y-4">
