@@ -15,9 +15,12 @@ const Login = () => {
   const location = useLocation();
   const { user, loading } = useSelector((state) => state.auth);
 
-  const redirect = new URLSearchParams(location.search).get("redirect") || "/";
+  // ✅ Get redirect param - ensure it has leading slash
+  let redirect = new URLSearchParams(location.search).get("redirect") || "/";
+  if (redirect && !redirect.startsWith("/")) {
+    redirect = "/" + redirect;
+  }
 
-  // ✅ Redirect when user is logged in
   useEffect(() => {
     if (user) {
       console.log("✅ User logged in, redirecting to:", redirect);
@@ -27,9 +30,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      return;
-    }
+    if (!email || !password) return;
     dispatch(clearError());
     await dispatch(loginUser({ email, password }));
   };

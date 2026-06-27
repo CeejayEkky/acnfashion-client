@@ -17,9 +17,12 @@ const Register = () => {
   const location = useLocation();
   const { user, loading } = useSelector((state) => state.auth);
 
-  const redirect = new URLSearchParams(location.search).get("redirect") || "/";
+  // ✅ Get redirect param - ensure it has leading slash
+  let redirect = new URLSearchParams(location.search).get("redirect") || "/";
+  if (redirect && !redirect.startsWith("/")) {
+    redirect = "/" + redirect;
+  }
 
-  // ✅ Redirect when user is registered
   useEffect(() => {
     if (user) {
       console.log("✅ User registered, redirecting to:", redirect);
