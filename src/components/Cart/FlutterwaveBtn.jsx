@@ -14,7 +14,7 @@ const FlutterwaveBtn = ({
 }) => {
   // Make sure amount is valid
   const paymentAmount = Number(amount) || 0;
-  
+  const shippingfee = 200
   const config = {
     public_key: import.meta.env.VITE_FLW_PUBLIC_KEY,
     tx_ref: `order-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -96,7 +96,7 @@ const FlutterwaveBtn = ({
       className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       disabled={!paymentAmount || paymentAmount <= 0 || !checkoutId}
     >
-      {!checkoutId ? "Loading..." : `Pay ₦${paymentAmount.toLocaleString()}`}
+      {!checkoutId ? "Loading..." : `Pay ₦${paymentAmount.toLocaleString() + shippingfee}`}
     </button>
   );
 };
