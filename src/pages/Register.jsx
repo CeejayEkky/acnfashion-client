@@ -22,6 +22,7 @@ const Register = () => {
   // ✅ Redirect when user is registered
   useEffect(() => {
     if (user) {
+      console.log("✅ User registered, redirecting to:", redirect);
       navigate(redirect);
     }
   }, [user, navigate, redirect]);

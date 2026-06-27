@@ -20,6 +20,7 @@ const Login = () => {
   // ✅ Redirect when user is logged in
   useEffect(() => {
     if (user) {
+      console.log("✅ User logged in, redirecting to:", redirect);
       navigate(redirect);
     }
   }, [user, navigate, redirect]);
