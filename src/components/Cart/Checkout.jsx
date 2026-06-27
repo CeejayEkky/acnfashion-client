@@ -117,7 +117,17 @@ const Checkout = () => {
 
       console.log("✅ Checkout finalized:", finalizeResponse.data);
       
-      // Clear cart
+      // ✅ CLEAR CART - FIXED: Use the same token variable, don't redeclare
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/api/cart/clear`,
+        {
+          headers: {
+            Authorization: `Bearer ${cleanToken}`,
+          },
+        }
+      );
+      
+      // ✅ Also clear Redux cart state
       dispatch(clearCart());
       localStorage.removeItem("cart");
       
@@ -137,10 +147,26 @@ const Checkout = () => {
     setIsProcessing(false);
   };
 
-  if (loading) return <p>Loading cart ...</p>;
+  if (loading) return (
+    <div className="flex justify-center items-center h-64">
+      <p>Loading cart ...</p>
+    </div>
+  );
+  
   if (error) return <p>Error: {error}</p>;
+  
   if (!cart || !cart.products || cart.products.length === 0) {
-    return <p>Your cart is empty.</p>;
+    return (
+      <div className="text-center py-10">
+        <p className="text-gray-500">Your cart is empty.</p>
+        <button 
+          onClick={() => navigate("/")}
+          className="mt-4 bg-black text-white px-6 py-2 rounded"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    );
   }
 
   const handleUpdate = (field) => (e) =>
