@@ -45,7 +45,7 @@ const CartContent = ({ cart }) => {
           key={i} 
           className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 py-4 border-b border-gray-100 last:border-0"
         >
-          <div className="w-full sm:w-20 flex-shrink-0">
+          <div className="w-full sm:w-20 shrink-0">
             <img
               src={prod.image}
               alt={prod.name}
