@@ -96,7 +96,7 @@ const FlutterwaveBtn = ({
       className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       disabled={!paymentAmount || paymentAmount <= 0 || !checkoutId}
     >
-      {!checkoutId ? "Loading..." : `Pay ₦${paymentAmount.toLocaleString() + shippingfee}`}
+      {!checkoutId ? "Loading..." : `Pay ₦${paymentAmount.toLocaleString()}`}
     </button>
   );
 };

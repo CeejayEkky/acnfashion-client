@@ -282,7 +282,7 @@ const Checkout = () => {
               <div>
                 <h3 className="text-lg mb-4">Pay with Flutterwave</h3>
                 <FlutterwaveBtn
-                  amount={cart.totalPrice}
+                  amount={cart.totalPrice + shippingfee}
                   phone={shippingAddress.phone}
                   name={`${shippingAddress.firstName} ${shippingAddress.lastName}`}
                   email={user?.email || ""}
