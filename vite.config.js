@@ -1,14 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react()],
   server: {
     port: 5173,
     proxy: {
       '/api': {
-        target: process.env.VITE_BACKEND_URL || 'http://localhost:5000',
+        target: 'https://acnfashion-server-1.onrender.com',
         changeOrigin: true,
       },
     },
@@ -16,7 +15,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-  rollupOptions: {
+    rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
@@ -25,5 +24,6 @@ export default defineConfig({
       },
     },
   },
-  publicDir: 'public', // ✅ This ensures _redirects is copied
+  // ✅ THIS IS IMPORTANT - ensures public folder is copied
+  publicDir: 'public',
 });
