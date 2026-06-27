@@ -7,7 +7,6 @@ const userFromStorage = localStorage.getItem("userInfo")
   ? JSON.parse(localStorage.getItem("userInfo"))
   : null;
 
-// ✅ Clean token helper
 const cleanToken = (token) => {
   if (!token) return null;
   return token.trim().replace(/^"|"$/g, '').replace(/\s/g, '');
@@ -21,6 +20,7 @@ const initialState = {
   guestId: initGuestId,
   loading: false,
   error: null,
+  isAuthenticated: !!userFromStorage,
 };
 
 // ✅ LOGIN
@@ -35,24 +35,20 @@ export const loginUser = createAsyncThunk(
         userData
       );
       
-      console.log("✅ Login success:", response.data);
-      
       if (response.data.success && response.data.token) {
         const token = cleanToken(response.data.token);
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
         localStorage.setItem("userToken", token);
-        toast.success(`Welcome ${response.data.user.name}! 🎉`);
+        toast.success(`Welcome back, ${response.data.user.name}! 🎉`);
         return response.data.user;
       } else {
         throw new Error(response.data.message || "Login failed");
       }
     } catch (error) {
       console.error("❌ Login error:", error.response?.data || error.message);
-      const errorMessage = error.response?.data?.message || "Login failed. Please check your credentials.";
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Login failed");
       return rejectWithValue({ 
-        message: errorMessage,
-        status: error.response?.status 
+        message: error.response?.data?.message || "Login failed",
       });
     }
   }
@@ -70,8 +66,6 @@ export const regUser = createAsyncThunk(
         userData
       );
       
-      console.log("✅ Register success:", response.data);
-      
       if (response.data.success && response.data.token) {
         const token = cleanToken(response.data.token);
         localStorage.setItem("userInfo", JSON.stringify(response.data.user));
@@ -83,11 +77,9 @@ export const regUser = createAsyncThunk(
       }
     } catch (error) {
       console.error("❌ Register error:", error.response?.data || error.message);
-      const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Registration failed");
       return rejectWithValue({ 
-        message: errorMessage,
-        status: error.response?.status 
+        message: error.response?.data?.message || "Registration failed",
       });
     }
   }
@@ -97,9 +89,9 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // ✅ FIXED: Logout without redirect (let component handle it)
     logout: (state) => {
       state.user = null;
+      state.isAuthenticated = false;
       state.guestId = `guest_${new Date().getTime()}`;
       state.error = null;
       localStorage.removeItem("userInfo");
@@ -121,29 +113,35 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.isAuthenticated = false;
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        state.isAuthenticated = true;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || { message: "Login failed" };
+        state.isAuthenticated = false;
       })
       // Register
       .addCase(regUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.isAuthenticated = false;
       })
       .addCase(regUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        state.isAuthenticated = true;
         state.error = null;
       })
       .addCase(regUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || { message: "Registration failed" };
+        state.isAuthenticated = false;
       });
   },
 });

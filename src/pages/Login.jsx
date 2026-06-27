@@ -14,16 +14,18 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, error } = useSelector((state) => state.auth);
+  const { user, loading, error, isAuthenticated } = useSelector((state) => state.auth);
 
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
 
+  // ✅ Redirect when user is authenticated
   useEffect(() => {
-    if (user) {
+    if (isAuthenticated && user) {
+      console.log("✅ User authenticated, redirecting to:", redirect);
       toast.success(`Welcome back, ${user.name}! 🎉`);
       navigate(redirect);
     }
-  }, [user, navigate, redirect]);
+  }, [isAuthenticated, user, navigate, redirect]);
 
   useEffect(() => {
     if (error) {
@@ -38,12 +40,15 @@ const Login = () => {
       return;
     }
     dispatch(clearError());
-    dispatch(loginUser({ email, password }));
+    const result = await dispatch(loginUser({ email, password }));
+    // ✅ If login succeeds, redirect happens in useEffect
+    if (result.error) {
+      toast.error(result.error.message || "Login failed");
+    }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
-      {/* ✅ Form Section - Full width on mobile */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center p-6 md:p-12 order-2 md:order-1">
         <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-6 md:p-8 rounded-lg border shadow-sm">
           <div className="flex mb-4 justify-center">
@@ -102,7 +107,6 @@ const Login = () => {
         </form>
       </div>
 
-      {/* ✅ Image Section - Hidden on mobile */}
       <div className="hidden md:block w-1/2 bg-gray-900 order-1 md:order-2">
         <div className="h-full flex flex-col justify-center items-center">
           <img src={Logo} alt="Login" className="h-full object-cover w-full" />
