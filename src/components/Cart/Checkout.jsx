@@ -55,7 +55,7 @@ const Checkout = () => {
         checkoutItems: cart.products,
         shippingAddress,
         paymentMethod: "Flutterwave",
-        totalPrice: cart.totalPrice,
+        totalPrice: cart.totalPrice + shippingfee,
       })).unwrap();
       
       console.log("✅ Checkout response:", res);
